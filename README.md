@@ -1,6 +1,10 @@
+# Ethernial ML 
+<p> Branching from the changes made to <a href="https://github.com/pidhii/ether">Ether</a>.
+
+
 
 <p align='center'>
-  <img src="./ether-logo.1280x640.png">
+  <img src="EthernailLogo.png">
 </p>
 
 !!! **IMPORTANT** !!! <br>

@@ -1,0 +1,86 @@
+let {*} = @(require 'list')
+let {*} = @(require 'string')
+
+let get_options cfg os =
+
+  let cfg = cfg | flat_map $ optcfg ->
+    if pair? optcfg.name
+    then map (name -> {optcfg with name}) optcfg.name
+    else [optcfg]
+  let cfg = cfg | map $ optcfg ->
+    if optcfg is of {arg_pat} then optcfg
+    else record $ ('arg_pat', \.*/) :: list optcfg
+
+  let get_rules opt =
+    try find (fn {name} -> name eq opt) cfg
+    with `failure -> raise `undefined_option
+
+  let rec loop os kws pos =
+    if let o::os = os then
+      if o eq "--" then (kws, rev_append pos os)
+      else if o =~ \^--/ then handle_long_option o os kws pos
+      else if o =~ \^-/ then handle_short_option o os kws pos
+      else loop os kws (o :: pos)
+    else (kws, rev pos)
+
+  and handle_long_option o os kws pos =
+    if let (brk, _) = strstr "=" o then
+      -- Long option with '=' 
+      let lopt = substr (2 .. brk-1) o
+      let {has_arg, val, arg_pat} = get_rules lopt
+      if has_arg then
+        let arg = substr (brk + 1 ...) o
+        raise (`invalid_option_argument lopt) unless arg =~ arg_pat
+        loop os ((val, arg) :: kws) pos
+      else raise `unexpected_argument
+    else
+      let lopt = substr (2...) o
+      let {has_arg, val, arg_pat} = get_rules lopt
+      if has_arg then
+        if let arg::os = os then
+          raise (`invalid_option_argument lopt) unless arg =~ arg_pat
+          loop os ((val, arg) :: kws) pos
+        else raise `missing_argument
+      else loop os ((val, true) :: kws) pos
+
+  and handle_short_option o os kws pos =
+    let shopt = substr (1..1) o
+    let {has_arg, val, arg_pat} = get_rules shopt
+    if strlen o > 2 then
+      -- Option and argument are merged 
+      if has_arg then
+        let arg = substr (2...) o
+        raise (`invalid_option_argument shopt) unless arg =~ arg_pat
+        loop os ((val, arg) :: kws) pos
+      else raise `unexpected_argument
+    else
+      if has_arg then
+        if let arg::os = os then
+          raise (`invalid_option_argument shopt) unless arg =~ arg_pat
+          loop os ((val, arg) :: kws) pos
+        else raise `missing_argument
+      else loop os ((val, true) :: kws) pos
+
+  loop os [] []
+
+let pub get =
+{.help|
+= CmdArg.get
+
+== DESCRIPTION
+Parse command line arguments in GNU style. Both short and long formats are available.
+
+== SYNOPSIS
+
+  get <list-of-options> <list-of-arguments> -> (opts, non-opt-args)
+
+=== ARGUMENTS
+* _list-of-options_ is a list of configurations for expected argumets of the form 
+
+    {name = string?, val = <any-tag>, has_arg = boolean?}
+
+* _list-of-arguments_ is a list of strings to be parsed (to parse command-line
+  arguments passed to your script use \`cdr command_line`.
+|.help}
+  get_options
+

@@ -951,6 +951,8 @@ build_mtree(ssa_builder *bldr, const eth_ir_match_table *P, int o[], int phi,
         {};
     }
   }
+
+  return NIL(eth_mtree);
 }
 
 /*

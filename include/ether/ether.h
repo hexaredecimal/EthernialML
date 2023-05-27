@@ -28,6 +28,8 @@
 #define eth_likely(expr) __builtin_expect(!!(expr), 1)
 #define eth_unlikely(expr) __builtin_expect((expr), 0)
 
+#define NIL(type) (type*) (NULL);
+
 #ifdef __cplusplus
 
 /* C++ does not have a 'restrict'-keyword by standard, also most compilers do
